@@ -6,7 +6,10 @@
       <li><router-link to="/">Inicio</router-link></li>
       <li><router-link to="/Catalogo">Catálogo</router-link></li>
       <li v-if="!isAuthenticated"><router-link to="/login">Iniciar Sesión</router-link></li>
-      <li v-if="isAuthenticated">Bienvenido: {{ username }}</li>
+      <li v-if="isAuthenticated"> 
+        <div class="avatar">
+          <span>{{ userInitials }}</span>
+        </div>Bienvenido: {{ username }}</li>
       <li v-if="isAuthenticated && esAdmin"><router-link to="/abmusuarios">ABM Usuarios</router-link></li> <!-- Enlace condicional -->
       <li v-if="isAuthenticated" class="logout-container">
         <button @click="handleLogout"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</button>
@@ -29,7 +32,13 @@ export default {
       return this.user?.username || '';
     },
     esAdmin() {
-      return this.user?.rol && this.user.rol.includes('Admin_ABM_Usuarios'); // Comprobamos si tiene el rol de Admin_ABM_Usuarios
+      return this.user?.rol && this.user.rol.includes('Admin_ABM_Usuarios');
+    },
+    userInitials() {
+      if (!this.username) return '';
+      const names = this.username.split(' ');
+      const initials = names[0].charAt(0) + (names[1] ? names[1].charAt(0) : '');
+      return initials.toUpperCase();
     }
   },
   created() {
@@ -119,5 +128,24 @@ button:hover {
   background-color: rgba(255, 255, 255, 0.2);
   text-decoration: none;
   border-radius: 5px;
+}
+
+.avatar-container {
+  display: flex;
+  align-items: center;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  background-color: rgb(255, 136, 0);
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  font-size: 18px;
+  font-weight: bold;
+  margin-right: 10px;
 }
 </style>

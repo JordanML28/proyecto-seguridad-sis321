@@ -1,11 +1,16 @@
 <template>
   <div class="home">
+     <div v-if="!isAuthenticated" class="welcome-message">
+      <h2>Bienvenido! Por favor, inicie sesión para acceder a más funcionalidades.</h2>
+    </div>
     <div class="gallery">
       <h1>Novedades</h1>
       <div v-if="novedades.length" class="product-grid">
         <div v-for="(producto, index) in novedades" :key="index" class="image-container">
           <img :src="producto.imagen_del_producto" :alt="producto.producto" />
-          <div class="caption">{{ producto.producto }}</div>
+          <router-link :to="{ name: 'DetalleProducto', params: { id: producto.id } }">
+              <div class="caption">{{ producto.producto }}</div>
+          </router-link>
         </div>
       </div>
 
@@ -13,15 +18,14 @@
       <div v-if="masVendidos.length" class="product-grid">
         <div v-for="(producto, index) in masVendidos" :key="index" class="image-container">
           <img :src="producto.imagen_del_producto" :alt="producto.producto" />
-          <div class="caption">{{ producto.producto }}</div>
+          <router-link :to="{ name: 'DetalleProducto', params: { id: producto.id } }">
+              <div class="caption">{{ producto.producto }}</div>
+            </router-link>
         </div>
       </div>
     </div>
 
-    <div v-if="!isAuthenticated" class="welcome-message">
-      <h2>Bienvenido! Por favor, inicie sesión para acceder a más funcionalidades.</h2>
-      <router-link to="/login">Iniciar Sesión</router-link>
-    </div>
+   
   </div>
 </template>
 
@@ -101,6 +105,9 @@ img {
   padding: 10px;
   text-align: center;
   font-size: 14px;
+}
+.caption:hover{
+  background-color: #FF9800;
 }
 .welcome-message {
   text-align: center;

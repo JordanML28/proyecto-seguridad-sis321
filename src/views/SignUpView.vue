@@ -86,6 +86,8 @@ export default {
           telefono: this.telefono,
           correo: fullEmail,
           contrasena: hashedPassword,
+          intentos:0,
+          estado:["Desbloqueado"],
           rol: ["usuario"],
           username: username
         };
@@ -94,7 +96,7 @@ export default {
         await setDoc(doc(db, "users", user.uid), userData);
 
         // Redirigir al login
-        this.$router.push("/login");
+        this.$router.push("/");
 
       } catch (error) {
         // Manejo de errores

@@ -19,10 +19,9 @@
   </div>
 </template>
 
-
 <script>
-import { getFirestore, collection, getDocs, query, where } from "firebase/firestore";
-import { mapActions } from 'vuex'; // Importa mapActions
+import { getFirestore, collection, getDocs, query, where, doc, updateDoc } from "firebase/firestore";
+import { mapActions } from 'vuex';
 import { onMounted } from 'vue';
 
 export default {
@@ -31,6 +30,7 @@ export default {
       email: "",
       password: "",
       errorMessage: "",
+      attempts: 0,
     };
   },
   methods: {
@@ -45,15 +45,14 @@ export default {
     },
 
     async handleLogin() {
-      const db = getFirestore(); // Obtiene la instancia de Firestore
-      this.errorMessage = ""; // Reinicia el mensaje de error
+      const db = getFirestore();
+      this.errorMessage = ""; 
 
       try {
-        const hashedPassword = await this.sha256(this.password); // Hashea la contraseña ingresada
+        const hashedPassword = await this.sha256(this.password); 
 
-        // Realiza la consulta a Firestore para encontrar al usuario por su correo
         const usersRef = collection(db, "users");
-        const q = query(usersRef, where("correo", "==", this.email)); // Cambia "email" por "correo"
+        const q = query(usersRef, where("correo", "==", this.email)); 
         const snapshot = await getDocs(q);
 
         if (snapshot.empty) {
@@ -63,20 +62,41 @@ export default {
 
         let userDoc;
         snapshot.forEach(doc => {
-          userDoc = { id: doc.id, ...doc.data() }; // Obtén el documento del usuario
+          userDoc = { id: doc.id, ...doc.data() }; 
         });
 
+        // Verificar si el usuario está bloqueado
+        if (userDoc.estado === "Bloqueado") {
+          this.errorMessage = "Tu cuenta está bloqueada. Contacta al administrador.";
+          return;
+        }
+
         // Comparar la contraseña hasheada
-        if (userDoc.contrasena === hashedPassword) { // Cambia "password" por "contrasena"
-          console.log("Inicio de sesión exitoso:", userDoc);
-          this.login(userDoc); // Llama a la acción de Vuex
-          localStorage.setItem('user', JSON.stringify({ id: userDoc.id, email: userDoc.correo })); // Guarda el usuario en localStorage
-          this.$router.push('/'); 
+        if (userDoc.contrasena === hashedPassword) {
+          // Reinicia los intentos si el inicio de sesión es exitoso
+          await updateDoc(doc(db, "users", userDoc.id), { intentos: 0 });
+          this.login(userDoc);
+          localStorage.setItem('user', JSON.stringify({ id: userDoc.id, email: userDoc.correo }));
+          this.$router.push('/');
         } else {
-          this.errorMessage = "Contraseña incorrecta.";
+          // Incrementar los intentos fallidos
+          this.attempts = userDoc.intentos + 1;
+
+          if (this.attempts >= 3) {
+            // Bloquear la cuenta después de 3 intentos fallidos
+            await updateDoc(doc(db, "users", userDoc.id), {
+              intentos: this.attempts,
+              estado: "Bloqueado",
+            });
+            this.errorMessage = `Contraseña incorrecta. Tu cuenta ha sido bloqueada.`;
+          } else {
+            // Actualizar el número de intentos fallidos
+            await updateDoc(doc(db, "users", userDoc.id), { intentos: this.attempts });
+            this.errorMessage = `Correo o Contraseña incorrectos - Intentos (${this.attempts}/3).`;
+          }
         }
       } catch (error) {
-        this.errorMessage = "Error al iniciar sesión: " + error.message; // Mostrar error
+        this.errorMessage = "Error al iniciar sesión: " + error.message; 
         console.error("Error al iniciar sesión:", error);
       }
     },
@@ -84,14 +104,13 @@ export default {
     checkUserSession() {
       const user = JSON.parse(localStorage.getItem('user'));
       if (user) {
-        // Si existe un usuario en localStorage, puedes establecerlo en Vuex o en tu estado
         this.login(user);
-        this.$router.push('/'); // Redirige a la página principal
+        this.$router.push('/');
       }
     }
   },
   onMounted() {
-    this.checkUserSession(); // Verifica la sesión al cargar el componente
+    this.checkUserSession();
   }
 };
 </script>
@@ -108,8 +127,8 @@ export default {
 
 form {
   display: flex;
-  flex-direction: column; /* Organiza los elementos en columna */
-  gap: 15px; /* Espacio entre los elementos */
+  flex-direction: column;
+  gap: 15px;
   padding: 20px;
   background-color: #8BC34A;
   border: 3px solid #FF9800;
@@ -117,24 +136,24 @@ form {
 }
 
 h2 {
-  text-align: center; /* Centra el título */
+  text-align: center;
 }
 
 .form-group {
   display: flex;
-  flex-direction: column; /* Organiza la etiqueta y el input en columna */
+  flex-direction: column;
 }
 
 label {
-  margin-bottom: 5px; /* Espacio entre la etiqueta y el input */
+  margin-bottom: 5px;
 }
 
 input[type="email"],
 input[type="password"] {
   width: 100%;
-  padding: 10px; /* Mejora el espaciado interno */
-  border: 1px solid #ccc; /* Añade un borde ligero */
-  border-radius: 4px; /* Mejora el estilo del input */
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 }
 
 input[type="submit"] {
@@ -143,20 +162,20 @@ input[type="submit"] {
   color: #fff;
   border: none;
   cursor: pointer;
-  border-radius: 5px; /* Añade bordes redondeados al botón */
+  border-radius: 5px;
 }
 
 input[type="submit"]:hover {
-  background-color: #F57C00; /* Cambia el color en hover */
+  background-color: #F57C00;
 }
 
 .signup-link {
-  text-align: center; /* Centra el enlace para crear cuenta */
+  text-align: center;
 }
 
 .error {
   color: red;
   margin-top: 10px;
-  text-align: center; /* Centra el mensaje de error */
+  text-align: center;
 }
 </style>

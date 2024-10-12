@@ -4,6 +4,7 @@ import LoginView from '../views/LoginView.vue';
 import SignUpView from '../views/SignUpView.vue';
 import CatalogoView from '../views/CatalogoView.vue';
 import ABMUsuariosView from '../views/ABMUsuariosView.vue';
+import DetalleProductoView from '../views/DetalleProductoView.vue'
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/firebase"; // Asegúrate de que importas correctamente tu configuración de Firebase
 
@@ -34,6 +35,12 @@ const routes = [
     name: 'abmusuarios',
     component: ABMUsuariosView,
     //meta: { requiresAuth: true } // Esta ruta requiere autenticación
+  },
+  {
+    path: '/detalle_producto/:id',  // Parámetro de ID
+    name: 'DetalleProducto',
+    component: DetalleProductoView,
+    props: true // Para pasar el id como propiedad al componente
   }
 ];
 

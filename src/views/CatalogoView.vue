@@ -6,9 +6,10 @@
         <div class="gallery">
           <div v-for="producto in productos[categoria]" :key="producto.id" class="image-container">
             <img :src="producto.imagen_del_producto" :alt="producto.producto" />
-            <a :href="`detalle_producto?id=${producto.id}`">
+            <!-- Usar router-link para la navegación -->
+            <router-link :to="{ name: 'DetalleProducto', params: { id: producto.id } }">
               <div class="caption">{{ producto.producto }}</div>
-            </a>
+            </router-link>
           </div>
         </div>
       </div>
@@ -19,6 +20,7 @@
     </div>
   </div>
 </template>
+
 
 <script>
 import { getFirestore, collection, getDocs, query, where } from "firebase/firestore";
@@ -100,5 +102,8 @@ img {
   padding: 10px;
   text-align: center;
   font-size: 14px;
+}
+.caption:hover{
+  background-color: #FF9800;
 }
 </style>

@@ -4,7 +4,7 @@
             <h2>Contactos</h2>
             <p><i class="fab fa-whatsapp icon" id="whatsapp"></i> Whatsapp</p>
             <p><i class="far fa-envelope icon" id="gmail"></i> Gmail</p>
-            <p><i class="fas fa-copyright icon"  id="copyright"></i> Drawish.2023</p>
+            <p><i class="fas fa-copyright icon"  id="copyright"></i> LibreriaUCB</p>
         </div>
 
         <div class="column">
