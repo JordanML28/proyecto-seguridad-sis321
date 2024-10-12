@@ -4,6 +4,10 @@
 ```
 npm install
 ```
+## Instalar Firebase
+```
+npm install firebase
+```
 
 ### Compiles and hot-reloads for development
 ```
