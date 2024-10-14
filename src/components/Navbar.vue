@@ -1,18 +1,42 @@
 <template>
   <nav>
+    <h1>Libreria UCB</h1>
+    <img src="https://tja.ucb.edu.bo/wp-content/uploads/2020/09/cropped-logo-UCB.png" alt="Logo" />
     <ul>
-      <img src="https://tja.ucb.edu.bo/wp-content/uploads/2020/09/cropped-logo-UCB.png" alt="Logo" />
-
       <li><router-link to="/">Inicio</router-link></li>
-      <li><router-link to="/Catalogo">Catálogo</router-link></li>
-      <li v-if="!isAuthenticated"><router-link to="/login">Iniciar Sesión</router-link></li>
-      <li v-if="isAuthenticated"> 
+      <!-- Mostrar el nombre del usuario autenticado -->
+      <li v-if="isAuthenticated">
         <div class="avatar">
           <span>{{ userInitials }}</span>
-        </div>Bienvenido: {{ username }}</li>
-      <li v-if="isAuthenticated && esAdmin"><router-link to="/abmusuarios">ABM Usuarios</router-link></li> <!-- Enlace condicional -->
+        </div>
+        Bienvenido: {{ username }}
+      </li>
+      <li v-if="isAuthenticated && tieneRol('Usuario') || tieneRol('Contador') || tieneRol('Auditor')">
+        <router-link to="/Catalogo">Catalogo</router-link>
+      </li>
+      <!-- Mostrar el link para iniciar sesión si no está autenticado -->
+      <li v-if="!isAuthenticated">
+        <router-link to="/login">Iniciar Sesión</router-link>
+      </li>
+      <!-- Mostrar el link para ABM Usuarios si tiene el rol Admin_ABM_Usuarios -->
+      <li v-if="isAuthenticated && tieneRol('Admin_ABM_Usuarios')">
+        <router-link to="/abmusuarios">Administrar Usuarios</router-link>
+      </li>
+      <!-- Mostrar el link para ABM Inventario si tiene el rol Admin_ABM_Inventario -->
+      <li v-if="isAuthenticated && tieneRol('Admin_ABM_Inventario'|| tieneRol('Auditor'))">
+        <router-link to="/abminventario">Administrar Inventario</router-link>
+      </li>
+      <li v-if="isAuthenticated && tieneRol('Admin_Ventas')">
+        <router-link to="/ventas">Ventas</router-link>
+      </li>
+      <li v-if="isAuthenticated && tieneRol('Contador') || tieneRol('Auditor')">
+        <router-link to="/reportes">Reportes</router-link>
+      </li>
+      <!-- Mostrar el botón de cerrar sesión si el usuario está autenticado -->
       <li v-if="isAuthenticated" class="logout-container">
-        <button @click="handleLogout"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</button>
+        <button @click="handleLogout">
+          <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+        </button>
       </li>
     </ul>
   </nav>
@@ -30,9 +54,6 @@ export default {
     ...mapState(['isAuthenticated', 'user']),
     username() {
       return this.user?.username || '';
-    },
-    esAdmin() {
-      return this.user?.rol && this.user.rol.includes('Admin_ABM_Usuarios');
     },
     userInitials() {
       if (!this.username) return '';
@@ -64,12 +85,21 @@ export default {
       } catch (error) {
         console.error("Error al cerrar sesión:", error);
       }
+    },
+    /**
+     * Verifica si el usuario tiene un rol específico.
+     * @param {String} rol - El rol a verificar.
+     * @returns {Boolean} - Devuelve true si el usuario tiene el rol, false en caso contrario.
+     */
+    tieneRol(rol) {
+      return this.user?.rol && this.user.rol.includes(rol);
     }
   }
 };
 </script>
 
 <style scoped>
+/* Estilos de la barra de navegación */
 nav {
   display: flex;
   background-color: #333;
@@ -83,19 +113,22 @@ nav {
 nav a {
   color: white;
   text-decoration: none;
-  font-size: 20px;
-  margin: 0 20px;
+  font-size: 18px;
+  margin-left: 5px; 
+  background-color: #FF9800;
+  border-radius: 15px;
+  padding: 6px;
 }
 
 nav a:hover {
-  color: orange;
+  background-color: rgb(13, 172, 16);
 }
 
 ul {
   list-style: none;
   display: flex;
   justify-content: space-between;
-  gap: 2rem;
+  gap: 1rem;
   margin: 0;
   padding: 0;
 }
@@ -110,7 +143,7 @@ li {
 }
 
 img {
-  width: 5%;
+  width: 6%;
   height: auto;
 }
 

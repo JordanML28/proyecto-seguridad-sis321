@@ -4,7 +4,10 @@ import LoginView from '../views/LoginView.vue';
 import SignUpView from '../views/SignUpView.vue';
 import CatalogoView from '../views/CatalogoView.vue';
 import ABMUsuariosView from '../views/ABMUsuariosView.vue';
+import ABMInventarioView from '../views/ABMInventarioView.vue';
 import DetalleProductoView from '../views/DetalleProductoView.vue'
+import VentasView from '../views/VentasView.vue'
+import ReportesView from '../views/ReportesView.vue'
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/firebase"; // Asegúrate de que importas correctamente tu configuración de Firebase
 
@@ -34,6 +37,24 @@ const routes = [
     path: '/abmusuarios',
     name: 'abmusuarios',
     component: ABMUsuariosView,
+    //meta: { requiresAuth: true } // Esta ruta requiere autenticación
+  },
+  {
+    path: '/abminventario',
+    name: 'abminventario',
+    component: ABMInventarioView,
+    //meta: { requiresAuth: true } // Esta ruta requiere autenticación
+  },
+  {
+    path: '/ventas',
+    name: 'ventas',
+    component: VentasView,
+    //meta: { requiresAuth: true } // Esta ruta requiere autenticación
+  },
+  {
+    path: '/reportes',
+    name: 'reportes',
+    component: ReportesView,
     //meta: { requiresAuth: true } // Esta ruta requiere autenticación
   },
   {

@@ -5,24 +5,8 @@ import { auth } from '@/firebase'; // Asegúrate de importar correctamente tu co
 
 export default createStore({
   state: {
+    user: null, // Aquí se almacenará toda la información del usuario
     isAuthenticated: false,
-    username: '',
-  },
-  mutations: {
-    setAuthenticated(state, status) {
-      state.isAuthenticated = status;
-    },
-    setUsername(state, username) {
-      state.username = username;
-    }
-  },
-  actions: {
-    login({ commit }, user) {
-      commit('SET_USER', user); // Guarda todos los datos del usuario en Vuex
-    },
-    logout({ commit }) {
-      commit('CLEAR_USER');
-    }
   },
   mutations: {
     SET_USER(state, user) {
@@ -32,16 +16,19 @@ export default createStore({
     CLEAR_USER(state) {
       state.user = null;
       state.isAuthenticated = false;
-    }
+    },
   },
-  state: {
-    user: null, // Aquí se almacenará toda la información del usuario
-    isAuthenticated: false
+  actions: {
+    login({ commit }, user) {
+      commit('SET_USER', user); // Guarda todos los datos del usuario en Vuex
+    },
+    logout({ commit }) {
+      commit('CLEAR_USER');
+      signOut(auth); // Asegúrate de cerrar la sesión en Firebase
+    },
   },
   getters: {
-    // Puedes agregar getters para acceder a campos específicos
-    getUser: state => state.user,
-    getRole: state => state.user?.rol || 'usuario', // Ejemplo para el rol
-  }
-  
+    getUser: (state) => state.user,
+    getRole: (state) => state.user?.rol || 'Usuario', // Ejemplo para el rol
+  },
 });

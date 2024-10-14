@@ -1,8 +1,8 @@
 <template>
   <div class="home">
-     <div v-if="!isAuthenticated" class="welcome-message">
+     <!--<div v-if="!isAuthenticated" class="welcome-message">
       <h2>Bienvenido! Por favor, inicie sesión para acceder a más funcionalidades.</h2>
-    </div>
+    </div>-->
     <div class="gallery">
       <h1>Novedades</h1>
       <div v-if="novedades.length" class="product-grid">

@@ -14,10 +14,6 @@
         </div>
       </div>
     </div>
-    <div v-if="isAuthenticated">
-      <!-- Aquí puedes mostrar información adicional o realizar acciones específicas para usuarios autenticados -->
-      <p>Estás logueado como: {{ username }}</p>
-    </div>
   </div>
 </template>
 
