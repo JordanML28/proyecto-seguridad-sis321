@@ -80,14 +80,32 @@
 
 <script>
 import { ref } from 'vue';
-import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc, setDoc } from 'firebase/firestore';
+import { useStore } from 'vuex';
+import { computed } from 'vue';
 
 export default {
   name: 'ABMInventarioView',
   setup() {
+    const store = useStore();
+    const user = computed(() => store.state.user);
     const productos = ref([]);
     const productoSeleccionado = ref(null);
+    const direccionIP = ref('');
 
+    // Función para obtener la IP pública
+    const obtenerIP = async () => {
+      try {
+        const response = await fetch('https://api.ipify.org?format=json');
+        const data = await response.json();
+        direccionIP.value = data.ip;
+      } catch (error) {
+        console.error('Error al obtener la dirección IP:', error);
+        direccionIP.value = 'Desconocida';
+      }
+    };
+
+    // Función para cargar productos
     const fetchProductos = async () => {
       const db = getFirestore();
       const productosCollection = collection(db, 'productos');
@@ -95,31 +113,83 @@ export default {
       productos.value = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     };
 
+    // Editar producto
     const editarProducto = (producto) => {
       productoSeleccionado.value = { ...producto };
     };
 
+    // Guardar cambios
     const guardarCambios = async () => {
+      const correo = user.value?.correo;
       const db = getFirestore();
       const productoDoc = doc(db, 'productos', productoSeleccionado.value.id);
-      await updateDoc(productoDoc, productoSeleccionado.value);
-      productoSeleccionado.value = null; // Limpiar la selección
-      fetchProductos(); // Volver a cargar la lista
+
+      const productoOriginal = productos.value.find((p) => p.id === productoSeleccionado.value.id);
+      const cambios = Object.keys(productoSeleccionado.value).reduce((acc, key) => {
+        if (productoSeleccionado.value[key] !== productoOriginal[key]) {
+          acc[key] = { antes: productoOriginal[key], despues: productoSeleccionado.value[key] };
+        }
+        return acc;
+      }, {});
+
+      try {
+        await updateDoc(productoDoc, productoSeleccionado.value);
+
+        // Log de cambios
+        const logData = {
+          id: `${Date.now()}-${productoSeleccionado.value.id}`,
+          direccionIP: direccionIP.value,
+          fecha: new Date().toISOString(),
+          correo,
+          resultado: `Producto editado: ${productoSeleccionado.value.id}`,
+          mensaje: `Campos modificados: ${JSON.stringify(cambios)}`,
+        };
+
+        const logsCollection = collection(db, 'logsAplicacion');
+        await setDoc(doc(logsCollection, logData.id), logData);
+
+        productoSeleccionado.value = null;
+        fetchProductos(); // Recargar lista de productos
+      } catch (error) {
+        console.error('Error al guardar los cambios:', error);
+      }
     };
 
+    // Eliminar producto
     const eliminarProducto = async (id) => {
       const confirmacion = confirm('¿Estás seguro de que deseas eliminar este producto?');
+      const correo = user.value?.correo;
+
       if (confirmacion) {
         const db = getFirestore();
         const productoDoc = doc(db, 'productos', id);
-        await deleteDoc(productoDoc);
-        fetchProductos(); // Volver a cargar la lista
+
+        try {
+          await deleteDoc(productoDoc);
+
+          const log = {
+            id: `${Date.now()}_${id}`,
+            direccionIP: direccionIP.value,
+            fecha: new Date().toISOString(),
+            correo,
+            resultado: `Producto eliminado: ${id}`,
+            mensaje: `El producto con ID ${id} ha sido eliminado.`,
+          };
+
+          const logRef = collection(db, 'logsAplicacion');
+          await setDoc(doc(logRef, log.id), log);
+
+          fetchProductos(); // Recargar lista de productos
+        } catch (error) {
+          console.error('Error al eliminar el producto:', error);
+        }
       } else {
         alert('Eliminación cancelada.');
       }
     };
 
-    // Cargar productos al inicio
+    // Llamar a obtenerIP y cargar productos al inicio
+    obtenerIP();
     fetchProductos();
 
     return {
@@ -133,6 +203,7 @@ export default {
   },
 };
 </script>
+
 
 <style scoped>
 /* Estilos de la tabla y formulario */

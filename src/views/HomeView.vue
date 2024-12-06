@@ -1,8 +1,5 @@
 <template>
   <div class="home">
-     <!--<div v-if="!isAuthenticated" class="welcome-message">
-      <h2>Bienvenido! Por favor, inicie sesión para acceder a más funcionalidades.</h2>
-    </div>-->
     <div class="gallery">
       <h1>Novedades</h1>
       <div v-if="novedades.length" class="product-grid">
@@ -24,13 +21,15 @@
         </div>
       </div>
     </div>
-
-   
   </div>
 </template>
 
 <script>
-import { getFirestore, collection, getDocs, query, where } from "firebase/firestore";
+import { ref } from 'vue';
+import { getFirestore, collection, getDocs,query,where, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { signOut } from "firebase/auth";
+import { auth } from "@/firebase"; // Configuración de Firebase
+import { mapState, mapActions } from 'vuex';
 import { useStore } from 'vuex';
 
 export default {
@@ -42,13 +41,16 @@ export default {
     };
   },
   computed: {
+    ...mapState(['isAuthenticated', 'user']),
     isAuthenticated() {
       const store = useStore();
       console.log(store);
       return store.getters.isAuthenticated;
     }
   },
+
   methods: {
+  
     async fetchProductos() {
       try {
         const db = getFirestore();
@@ -62,7 +64,8 @@ export default {
       } catch (error) {
         console.error("Error fetching products: ", error);
       }
-    }
+    },
+    ...mapActions(['login', 'logout']),
   },
   mounted() {
     this.fetchProductos();

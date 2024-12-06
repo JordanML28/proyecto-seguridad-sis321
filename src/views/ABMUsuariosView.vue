@@ -98,101 +98,150 @@
 
 <script>
 import { ref } from 'vue';
-import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { signOut } from "firebase/auth";
-import { auth } from "@/firebase"; // Configuración de Firebase
-import { mapState, mapActions } from 'vuex';
+import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc, setDoc } from 'firebase/firestore';
+import { mapState } from 'vuex';
+import { computed } from 'vue';
+import { useStore } from 'vuex';
+
 export default {
-  name: 'ABMUsuariosView',
   computed: {
     ...mapState(['isAuthenticated', 'user']),
-    username() {
-      return this.user?.username || '';
-    },
-    userInitials() {
-      if (!this.username) return '';
-      const names = this.username.split(' ');
-      const initials = names[0].charAt(0) + (names[1] ? names[1].charAt(0) : '');
-      return initials.toUpperCase();
-    }
   },
+  name: 'ABMUsuariosView',
   setup() {
+    const store = useStore();
+    const user = computed(() => store.state.user);
     const usuarios = ref([]);
     const usuarioSeleccionado = ref(null);
+    const direccionIP = ref('');
 
-    // Mapeo de roles internos a nombres visuales
+    // Mapeo de roles
     const rolesMap = {
-      'Usuario': 'Usuario',
-      'Admin_ABM_Usuarios': 'Administrador de Usuarios',
-      'Admin_ABM_Inventario': 'Administrador de Inventario',
-      'Admin_Ventas': 'Jefe de Ventas',
-      'Contador': 'Contador',
-      'Auditor': 'Auditor'
-     
+      Usuario: 'Usuario',
+      Admin_ABM_Usuarios: 'Administrador de Usuarios',
+      Admin_ABM_Inventario: 'Administrador de Inventario',
+      Admin_Ventas: 'Jefe de Ventas',
+      Contador: 'Contador',
+      Auditor: 'Auditor',
     };
 
-    const roles = ['Usuario','Admin_ABM_Usuarios', 'Admin_ABM_Inventario','Admin_Ventas', 'Contador', 'Auditor'];
+    const roles = Object.keys(rolesMap);
 
-    // Función para mapear el rol a un valor visual
-    const mapRol = (rol) => {
-      return rolesMap[rol] || rol; // Retorna el nombre visual, o el rol original si no está en el mapa
+    // Función para obtener la IP pública
+    const obtenerIP = async () => {
+      try {
+        const response = await fetch('https://api.ipify.org?format=json');
+        const data = await response.json();
+        direccionIP.value = data.ip;
+      } catch (error) {
+        console.error('Error al obtener la dirección IP:', error);
+        direccionIP.value = 'Desconocida';
+      }
     };
 
+    // Función para cargar usuarios
     const fetchUsuarios = async () => {
       const db = getFirestore();
       const usuariosCollection = collection(db, 'users');
       const querySnapshot = await getDocs(usuariosCollection);
-      usuarios.value = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      usuarios.value = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     };
 
+    // Editar usuario
     const editarUsuario = (usuario) => {
-      usuarioSeleccionado.value = { 
+      usuarioSeleccionado.value = {
         ...usuario,
-        estado: usuario.estado.charAt(0).toUpperCase() + usuario.estado.slice(1).toLowerCase(), // Normaliza el estado a "Desbloqueado" o "Bloqueado"
+        estado: usuario.estado.charAt(0).toUpperCase() + usuario.estado.slice(1).toLowerCase(), // Normaliza el estado
       };
     };
 
+    // Guardar cambios
     const guardarCambios = async () => {
+      const correo = user.value?.correo;
       if (!usuarioSeleccionado.value.rol || usuarioSeleccionado.value.rol.length === 0) {
         alert('Debes seleccionar al menos un rol.');
         return;
       }
 
-      // Verifica si el estado ha cambiado de "Bloqueado" a "Desbloqueado"
-      if (usuarioSeleccionado.value.estado === "Desbloqueado") {
-        usuarioSeleccionado.value.intentos = 0; // Resetea los intentos a 0
+      if (usuarioSeleccionado.value.estado === 'Desbloqueado') {
+        usuarioSeleccionado.value.intentos = 0; // Resetea los intentos
       }
 
       const db = getFirestore();
       const usuarioDoc = doc(db, 'users', usuarioSeleccionado.value.id);
-      await updateDoc(usuarioDoc, usuarioSeleccionado.value);
-      usuarioSeleccionado.value = null; // Limpiar la selección
-      fetchUsuarios(); // Volver a cargar la lista
 
-      // Refresca la página
-      window.location.reload();
+      const usuarioOriginal = usuarios.value.find((u) => u.id === usuarioSeleccionado.value.id);
+      const cambios = Object.keys(usuarioSeleccionado.value).reduce((acc, key) => {
+        if (usuarioSeleccionado.value[key] !== usuarioOriginal[key]) {
+          acc[key] = { antes: usuarioOriginal[key], despues: usuarioSeleccionado.value[key] };
+        }
+        return acc;
+      }, {});
+
+      try {
+        await updateDoc(usuarioDoc, usuarioSeleccionado.value);
+
+        const logData = {
+          id: `${Date.now()}-${usuarioSeleccionado.value.id}`,
+          direccionIP: direccionIP.value,
+          fecha: new Date().toISOString(),
+          correo,
+          resultado: `Usuario editado: ${usuarioSeleccionado.value.id}`,
+          mensaje: `Campos modificados: ${JSON.stringify(cambios)}`,
+        };
+
+        const logsCollection = collection(db, 'logsAplicacion');
+        await setDoc(doc(logsCollection, logData.id), logData);
+
+        usuarioSeleccionado.value = null;
+        fetchUsuarios();
+      } catch (error) {
+        console.error('Error al guardar los cambios:', error);
+      }
     };
 
+    // Eliminar usuario
     const eliminarUsuario = async (id) => {
       const confirmacion = confirm('¿Estás seguro de que deseas eliminar este usuario?');
+      const correo = user.value?.correo;
+
       if (confirmacion) {
         const db = getFirestore();
         const usuarioDoc = doc(db, 'users', id);
-        await deleteDoc(usuarioDoc);
-        fetchUsuarios(); // Volver a cargar la lista
+
+        try {
+          await deleteDoc(usuarioDoc);
+
+          const log = {
+            id: `${Date.now()}_${id}`,
+            direccionIP: direccionIP.value,
+            fecha: new Date().toISOString(),
+            correo,
+            resultado: `Usuario eliminado: ${id}`,
+            mensaje: `El usuario con ID ${id} ha sido eliminado.`,
+          };
+
+          const logRef = collection(db, 'logsAplicacion');
+          await setDoc(doc(logRef, log.id), log);
+
+          fetchUsuarios();
+        } catch (error) {
+          console.error('Error al eliminar el usuario:', error);
+        }
       } else {
         alert('Eliminación cancelada.');
       }
     };
 
-    // Cargar usuarios al inicio
+    // Llamar a obtenerIP y cargar usuarios al inicio
+    obtenerIP();
     fetchUsuarios();
 
     return {
       usuarios,
       usuarioSeleccionado,
       roles,
-      mapRol,
+      mapRol: (rol) => rolesMap[rol] || rol,
       fetchUsuarios,
       editarUsuario,
       guardarCambios,
@@ -201,6 +250,7 @@ export default {
   },
 };
 </script>
+
 
 <style scoped>
 /* Estilos de la tabla y formulario */
@@ -212,7 +262,7 @@ export default {
 table {
   width: 100%;
   border-collapse: collapse;
-  background-color:antiquewhite;
+  background-color: antiquewhite;
 }
 
 th, td {
@@ -226,7 +276,7 @@ td {
 th {
   background-color: #FF9800;
 }
-.rol{
+.rol {
   text-align: center;
   margin: 5px;
   color: aliceblue;
@@ -250,7 +300,7 @@ button.editar {
 }
 
 button.editar:hover {
-  background-color: rgb(77, 77, 247);
+  background-color: darkblue;
 }
 
 button.eliminar {
@@ -259,32 +309,25 @@ button.eliminar {
 }
 
 button.eliminar:hover {
-  background-color: rgb(250, 131, 131);
-}
-
-h1 {
-  text-align: center;
-  margin-top: 10px;
-  margin-bottom: 10px;
+  background-color: darkred;
 }
 
 form {
   margin-top: 20px;
-  border: 1.5px solid #ccc;
-}
-form button{
-  background-color: blue;
-  color: white;
 }
 
-form button:hover{
-  background-color: rgb(77, 77, 247);
-  color: white;
-}
 fieldset {
-  border: none;
-  margin: 10px 0;
   display: flex;
   flex-direction: column;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  margin-right: 10px;
+}
+h1 {
+  text-align: center;
+  margin-top: 10px;
+  margin-bottom: 10px;
 }
 </style>

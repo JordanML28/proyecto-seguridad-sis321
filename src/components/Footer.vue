@@ -1,13 +1,6 @@
 <template>
   <div class="footer">
         <div class="column">
-            <h2>Contactos</h2>
-            <p><i class="fab fa-whatsapp icon" id="whatsapp"></i> Whatsapp</p>
-            <p><i class="far fa-envelope icon" id="gmail"></i> Gmail</p>
-            <p><i class="fas fa-copyright icon"  id="copyright"></i> LibreriaUCB</p>
-        </div>
-
-        <div class="column">
             <h2>Visita la Tienda</h2>
             <p>Ver mapa</p>
             <p>Horario de atención en tienda:</p>

@@ -1,0 +1,12 @@
+# Aplicar a todas las rutas:
+/
+  Content-Security-Policy: 
+    default-src 'self'; 
+    connect-src 'self' https://firestore.googleapis.com; 
+    font-src 'self' https://kit.fontawesome.com; 
+    img-src 'self' data: https://tja.ucb.edu.bo https://i.postimg.cc https://www.google.com; 
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://kit.fontawesome.com; 
+    script-src 'self' https://kit.fontawesome.com https://www.gstatic.com 'unsafe-inline';
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload

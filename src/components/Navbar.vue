@@ -22,6 +22,12 @@
       <li v-if="isAuthenticated && tieneRol('Admin_ABM_Usuarios')">
         <router-link to="/abmusuarios">Administrar Usuarios</router-link>
       </li>
+      <li v-if="isAuthenticated && tieneRol('Admin_ABM_Usuarios')">
+        <router-link to="/logsusuario">Logs de Usuarios</router-link>
+      </li>
+      <li v-if="isAuthenticated && tieneRol('Admin_ABM_Usuarios')">
+        <router-link to="/logsaplicacion">Logs de Aplicacion</router-link>
+      </li>
       <!-- Mostrar el link para ABM Inventario si tiene el rol Admin_ABM_Inventario -->
       <li v-if="isAuthenticated && tieneRol('Admin_ABM_Inventario'|| tieneRol('Auditor'))">
         <router-link to="/abminventario">Administrar Inventario</router-link>
@@ -48,7 +54,7 @@ import { auth } from "@/firebase"; // Configuración de Firebase
 import { onAuthStateChanged } from "firebase/auth";
 import { getFirestore, doc, getDoc } from "firebase/firestore";
 import { mapState, mapActions } from 'vuex';
-
+import { useStore } from 'vuex';
 export default {
   computed: {
     ...mapState(['isAuthenticated', 'user']),

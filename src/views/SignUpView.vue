@@ -4,15 +4,33 @@
     <form @submit.prevent="signUp">
       <div class="form-group">
         <label for="nombre">Nombre</label>
-        <input v-model="nombre" type="text" id="nombre" required />
+        <input 
+          v-model="nombre" 
+          type="text" 
+          id="nombre" 
+          required 
+          @input="validateLetters('nombre')" 
+        />
       </div>
       <div class="form-group">
         <label for="apellido1">Primer Apellido</label>
-        <input v-model="apellido1" type="text" id="apellido1" required />
+        <input 
+          v-model="apellido1" 
+          type="text" 
+          id="apellido1" 
+          required 
+          @input="validateLetters('apellido1')" 
+        />
       </div>
       <div class="form-group">
         <label for="apellido2">Segundo Apellido</label>
-        <input v-model="apellido2" type="text" id="apellido2" required />
+        <input 
+          v-model="apellido2" 
+          type="text" 
+          id="apellido2" 
+          required 
+          @input="validateLetters('apellido2')" 
+        />
       </div>
       <div class="form-group">
         <label for="telefono">Teléfono</label>
@@ -27,6 +45,8 @@
             type="text" 
             id="correo" 
             @keydown="preventAtSymbol" 
+            @paste="preventPaste" 
+            autocomplete="new-password" 
             required 
           />
           <span class="email-extension">@ucb.edu.bo</span>
@@ -98,6 +118,16 @@ export default {
       const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
       return hashHex;
     },
+    validateLetters(field) {
+      const regex = /^[A-Za-záéíóúÁÉÍÓÚÑñ ]+$/;
+      if (field === 'nombre' && !regex.test(this.nombre)) {
+        this.nombre = this.nombre.replace(/[^A-Za-záéíóúÁÉÍÓÚÑñ ]+/g, ''); // Limpiar si hay caracteres no permitidos
+      } else if (field === 'apellido1' && !regex.test(this.apellido1)) {
+        this.apellido1 = this.apellido1.replace(/[^A-Za-záéíóúÁÉÍÓÚÑñ ]+/g, '');
+      } else if (field === 'apellido2' && !regex.test(this.apellido2)) {
+        this.apellido2 = this.apellido2.replace(/[^A-Za-záéíóúÁÉÍÓÚÑñ ]+/g, '');
+      }
+    },
     async emailExistsInFirestore(email) {
       const db = getFirestore();
       const usersRef = collection(db, "users"); 
@@ -131,6 +161,18 @@ export default {
         this.correoError = "No se puede ingresar '@' ya que la extensión es predeterminada.";
       } else {
         this.correoError = ""; // Limpiar el error si se ingresa otro carácter
+      }
+    },
+    preventPaste(event) {
+      // Obtener el texto que se va a pegar
+      const pasteData = event.clipboardData.getData('text');
+      
+      // Si contiene '@', prevenir el pegado
+      if (pasteData.includes('@')) {
+        event.preventDefault();
+        this.correoError = "No se puede pegar un correo con '@' ya que la extensión es predeterminada.";
+      } else {
+        this.correoError = ""; // Limpiar el error si el texto pegado es válido
       }
     },
     validatePassword() {

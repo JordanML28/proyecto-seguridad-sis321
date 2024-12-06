@@ -29,6 +29,7 @@ export default createStore({
   },
   getters: {
     getUser: (state) => state.user,
+    getCorreo: (state) => state.user?.correo || 'Correo',
     getRole: (state) => state.user?.rol || 'Usuario', // Ejemplo para el rol
   },
 });
